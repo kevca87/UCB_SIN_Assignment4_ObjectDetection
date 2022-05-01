@@ -1,7 +1,7 @@
 window.addEventListener('load', (event) => {
 
     const baseUrl = "http://localhost:8080/objectdetection"
-    
+
     function goTo(htmlFile){
         window.location.href = htmlFile;
     }
