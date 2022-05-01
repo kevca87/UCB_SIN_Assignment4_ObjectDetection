@@ -8,10 +8,9 @@ from tensorflow import keras
 
 import matplotlib.pyplot as plt
 import tensorflow_datasets as tfds
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-physical_devices = tf.config.list_physical_devices('GPU') 
-if len(physical_devices)>0:
-    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
 """
 ## Downloading the COCO2017 dataset
 
@@ -127,13 +126,14 @@ def compute_iou(boxes1, boxes2):
     )
     return tf.clip_by_value(intersection_area / union_area, 0.0, 1.0)
 
-
 def visualize_detections(
     image, boxes, classes, scores, figsize=(7, 7), linewidth=1, color=[0, 0, 1]
 ):
     """Visualize Detections"""
+
     image = np.array(image, dtype=np.uint8)
-    plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
+    canvas = FigureCanvas(fig)
     plt.axis("off")
     plt.imshow(image)
     ax = plt.gca()
@@ -153,8 +153,14 @@ def visualize_detections(
             clip_box=ax.clipbox,
             clip_on=True,
         )
-    plt.show()
-    return ax
+    
+    canvas.draw() 
+
+    width, height = fig.get_size_inches() * fig.get_dpi()
+    result_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+    result_image = result_image.reshape(int(height), int(width), 3)
+    #plt.show()
+    return result_image
 
 
 
@@ -798,42 +804,42 @@ class RetinaNetLoss(tf.losses.Loss):
 ## Setting up training parameters
 """
 
-model_dir = "retinanet/"
-label_encoder = LabelEncoder()
+# model_dir = "retinanet/"
+# label_encoder = LabelEncoder()
 
-num_classes = 80
-batch_size = 2
+# num_classes = 80
+# batch_size = 2
 
-learning_rates = [2.5e-06, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
-learning_rate_boundaries = [125, 250, 500, 240000, 360000]
-learning_rate_fn = tf.optimizers.schedules.PiecewiseConstantDecay(
-    boundaries=learning_rate_boundaries, values=learning_rates
-)
+# learning_rates = [2.5e-06, 0.000625, 0.00125, 0.0025, 0.00025, 2.5e-05]
+# learning_rate_boundaries = [125, 250, 500, 240000, 360000]
+# learning_rate_fn = tf.optimizers.schedules.PiecewiseConstantDecay(
+#     boundaries=learning_rate_boundaries, values=learning_rates
+# )
 
 """
 ## Initializing and compiling model
 """
 
-resnet50_backbone = get_backbone()
-loss_fn = RetinaNetLoss(num_classes)
-model = RetinaNet(num_classes, resnet50_backbone)
+# resnet50_backbone = get_backbone()
+# loss_fn = RetinaNetLoss(num_classes)
+# model = RetinaNet(num_classes, resnet50_backbone)
 
-optimizer = tf.optimizers.SGD(learning_rate=learning_rate_fn, momentum=0.9)
-model.compile(loss=loss_fn, optimizer=optimizer)
+# optimizer = tf.optimizers.SGD(learning_rate=learning_rate_fn, momentum=0.9)
+# model.compile(loss=loss_fn, optimizer=optimizer)
 
 """
 ## Setting up callbacks
 """
 
-callbacks_list = [
-    tf.keras.callbacks.ModelCheckpoint(
-        filepath=os.path.join(model_dir, "weights" + "_epoch_{epoch}"),
-        monitor="loss",
-        save_best_only=False,
-        save_weights_only=True,
-        verbose=1,
-    )
-]
+# callbacks_list = [
+#     tf.keras.callbacks.ModelCheckpoint(
+#         filepath=os.path.join(model_dir, "weights" + "_epoch_{epoch}"),
+#         monitor="loss",
+#         save_best_only=False,
+#         save_weights_only=True,
+#         verbose=1,
+#     )
+# ]
 
 """
 ## Load the COCO2017 dataset using TensorFlow Datasets
@@ -841,9 +847,9 @@ callbacks_list = [
 
 # set `data_dir=None` to load the complete dataset
 
-(train_dataset, val_dataset), dataset_info = tfds.load(
-    "coco/2017", split=["train", "validation"], with_info=True, data_dir="data"
-)
+# (train_dataset, val_dataset), dataset_info = tfds.load(
+#     "coco/2017", split=["train", "validation"], with_info=True, data_dir="data"
+# )
 
 """
 ## Setting up a `tf.data` pipeline
@@ -860,25 +866,25 @@ rectangular tensors
 - Create targets for each sample in the batch using `LabelEncoder`
 """
 
-autotune = tf.data.AUTOTUNE
-train_dataset = train_dataset.map(preprocess_data, num_parallel_calls=autotune)
-train_dataset = train_dataset.shuffle(8 * batch_size)
-train_dataset = train_dataset.padded_batch(
-    batch_size=batch_size, padding_values=(0.0, 1e-8, -1), drop_remainder=True
-)
-train_dataset = train_dataset.map(
-    label_encoder.encode_batch, num_parallel_calls=autotune
-)
-train_dataset = train_dataset.apply(tf.data.experimental.ignore_errors())
-train_dataset = train_dataset.prefetch(autotune)
+# autotune = tf.data.AUTOTUNE
+# train_dataset = train_dataset.map(preprocess_data, num_parallel_calls=autotune)
+# train_dataset = train_dataset.shuffle(8 * batch_size)
+# train_dataset = train_dataset.padded_batch(
+#     batch_size=batch_size, padding_values=(0.0, 1e-8, -1), drop_remainder=True
+# )
+# train_dataset = train_dataset.map(
+#     label_encoder.encode_batch, num_parallel_calls=autotune
+# )
+# train_dataset = train_dataset.apply(tf.data.experimental.ignore_errors())
+# train_dataset = train_dataset.prefetch(autotune)
 
-val_dataset = val_dataset.map(preprocess_data, num_parallel_calls=autotune)
-val_dataset = val_dataset.padded_batch(
-    batch_size=1, padding_values=(0.0, 1e-8, -1), drop_remainder=True
-)
-val_dataset = val_dataset.map(label_encoder.encode_batch, num_parallel_calls=autotune)
-val_dataset = val_dataset.apply(tf.data.experimental.ignore_errors())
-val_dataset = val_dataset.prefetch(autotune)
+# val_dataset = val_dataset.map(preprocess_data, num_parallel_calls=autotune)
+# val_dataset = val_dataset.padded_batch(
+#     batch_size=1, padding_values=(0.0, 1e-8, -1), drop_remainder=True
+# )
+# val_dataset = val_dataset.map(label_encoder.encode_batch, num_parallel_calls=autotune)
+# val_dataset = val_dataset.apply(tf.data.experimental.ignore_errors())
+# val_dataset = val_dataset.prefetch(autotune)
 
 """
 ## Training the model
@@ -909,20 +915,20 @@ val_dataset = val_dataset.prefetch(autotune)
 ## Loading weights
 """
 
-# Change this to `model_dir` when not using the downloaded weights
-weights_dir = "data"
+# # Change this to `model_dir` when not using the downloaded weights
+# weights_dir = "data"
 
-latest_checkpoint = tf.train.latest_checkpoint(weights_dir)
-model.load_weights(latest_checkpoint)
+# latest_checkpoint = tf.train.latest_checkpoint(weights_dir)
+# model.load_weights(latest_checkpoint)
 
 """
 ## Building inference model
 """
 
-image = tf.keras.Input(shape=[None, None, 3], name="image")
-predictions = model(image, training=False)
-detections = DecodePredictions(confidence_threshold=0.5)(image, predictions)
-inference_model = tf.keras.Model(inputs=image, outputs=detections)
+# image = tf.keras.Input(shape=[None, None, 3], name="image")
+# predictions = model(image, training=False)
+# detections = DecodePredictions(confidence_threshold=0.5)(image, predictions)
+# inference_model = tf.keras.Model(inputs=image, outputs=detections)
 
 """
 ## Generating detections
@@ -935,26 +941,26 @@ def prepare_image(image):
     return tf.expand_dims(image, axis=0), ratio
 
 
-val_dataset = tfds.load("coco/2017", split="validation", data_dir="data")
-int2str = dataset_info.features["objects"]["label"].int2str
+#val_dataset = tfds.load("coco/2017", split="validation", data_dir="data")
+#int2str = dataset_info.features["objects"]["label"].int2str
 
 
-from PIL import Image
-image_path = "./prove/fordgt.jpg"
-image = Image.open(image_path)
-image = np.array(image)
+# from PIL import Image
+# image_path = "./prove/fordgt.jpg"
+# image = Image.open(image_path)
+# image = np.array(image)
 #tensor_image = tf.cast(image,dtype=tf.float32)
 #plt.imshow(image)
 
-input_image, ratio = prepare_image(image)
-detections = inference_model.predict(input_image)
-num_detections = detections.valid_detections[0]
-class_names = [
-    int2str(int(x)) for x in detections.nmsed_classes[0][:num_detections]
-]
-visualize_detections(
-    image,
-    detections.nmsed_boxes[0][:num_detections] / ratio,
-    class_names,
-    detections.nmsed_scores[0][:num_detections],
-)
+# input_image, ratio = prepare_image(image)
+# detections = inference_model.predict(input_image)
+# num_detections = detections.valid_detections[0]
+# class_names = [
+#     int2str(int(x)) for x in detections.nmsed_classes[0][:num_detections]
+# ]
+# visualize_detections(
+#     image,
+#     detections.nmsed_boxes[0][:num_detections] / ratio,
+#     class_names,
+#     detections.nmsed_scores[0][:num_detections],
+# )
