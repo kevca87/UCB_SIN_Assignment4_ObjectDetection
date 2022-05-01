@@ -6,11 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="./uploadFile.js"></script>
     <title>Document</title>
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <form id="upload-form">
-        <input type="file" name="image" id="imagefile"/>
-        <input type="submit" value="Detectar objetos"/>
-    </form>
+    <div class="container">
+        <div>
+            <h1>Object Detection</h1>
+        </div>
+        <div class="container">
+            <form id="upload-form">
+                <input type="file" name="image" id="imagefile"/>
+                <br>
+                <input type="submit" value="Detectar objetos"/>
+            </form>
+        </div>
+    </div>
+    <div class="container">
+        <img src="./art.png" width="500px">
+    </div>
 </body>
 </html>

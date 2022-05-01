@@ -32,7 +32,7 @@ window.addEventListener('load', (event) => {
                 method: 'POST',
                 body: formData
             }).then(response => {
-                if(response.status === 201){
+                if(response.status === 200){
                     //goTo('./events.html');
                 } else {
                     response.text()

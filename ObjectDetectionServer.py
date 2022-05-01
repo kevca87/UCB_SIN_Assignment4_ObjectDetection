@@ -17,6 +17,14 @@ physical_devices = tf.config.list_physical_devices('GPU')
 if len(physical_devices)>0:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
+url = "https://github.com/srihari-humbarwadi/datasets/releases/download/v0.1.0/data.zip"
+filename = os.path.join(os.getcwd(), "data.zip")
+keras.utils.get_file(filename, url)
+
+with zipfile.ZipFile("data.zip", "r") as z_fp:
+    z_fp.extractall("./")
+
+
 num_classes = 80
 batch_size = 2
 
@@ -106,9 +114,8 @@ def object_detection():
 
     file_name = 'art.png'
     Image.fromarray(detected_image).convert("RGB").save(file_name)
-    #send_file(image)
-
-    return 'OK', 201
+    
+    return send_file('./'+file_name,attachment_filename=file_name), 200
 
 #Python asigna el valor __main__ a la variable __name__ cuando se ejecuta en modo standalone
 if __name__ == '__main__':
